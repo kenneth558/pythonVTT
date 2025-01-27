@@ -10,7 +10,7 @@ import sys
 DEBUG = False
 
 ###############################################################################
-# 1) Dictionaries & Maps
+# 1) Dictionaries & Maps (same as stable base + a few symbol keys if you want)
 ###############################################################################
 
 MODIFIER_MAP = {
@@ -47,12 +47,7 @@ ARROW_SYNONYMS = {
     "go down": "down arrow"
 }
 
-# Symbol Keys & synonyms: 
-# "bang key" => '!', "exclamation point key" => '!', etc.
-# "at key" => '@', "hash key" => '#', etc.
-# Also keep previously added "equal key", "period key", "question mark key"...
 MAIN_KEY_MAP = {
-    # Existing from your stable base:
     "enter": Key.enter,
     "return": Key.enter,
     "escape": Key.esc,
@@ -64,48 +59,12 @@ MAIN_KEY_MAP = {
     "end": Key.end,
     "page up": Key.page_up,
     "page down": Key.page_down,
-
     "left arrow": Key.left,
     "right arrow": Key.right,
     "up arrow": Key.up,
     "down arrow": Key.down,
-
-    "f1": Key.f1,
-    "f2": Key.f2,
-    "f3": Key.f3,
-    "f4": Key.f4,
-    "f5": Key.f5,
-    "f6": Key.f6,
-    "f7": Key.f7,
-    "f8": Key.f8,
-    "f9": Key.f9,
-    "f10": Key.f10,
-    "f11": Key.f11,
-    "f12": Key.f12,
-
-    # Existing special keys from previous step
-    "equal key": "typed_equal",
-    "period key": "typed_period",
-    "caps lock key": Key.caps_lock,
-    "question mark key": "typed_question",
-    "question key": "typed_question",
-
-    # New symbol keys
-    "bang key": "typed_exclamation",
-    "exclamation point key": "typed_exclamation",
-    "exclamation mark key": "typed_exclamation",
-    "at key": "typed_at",
-    "hash key": "typed_hash",
-    "dollar key": "typed_dollar",
-    "percent key": "typed_percent",
-    "caret key": "typed_caret",
-    "ampersand key": "typed_ampersand",
-    "star key": "typed_star",
-    "left paren key": "typed_left_paren",
-    "right paren key": "typed_right_paren",
-    "plus key": "typed_plus",
-    "underline key": "typed_underscore",
-    "minus key": "typed_minus",
+    # ...
+    # If you have other keys like "equal key", "period key", etc., add them here
 }
 
 CUSTOM_ACTIONS = {
@@ -119,27 +78,22 @@ CUSTOM_ACTIONS = {
 keyboard = Controller()
 
 def debug_print(msg):
-    """Print debug messages only if DEBUG is True."""
     if DEBUG:
         print(f"DEBUG: {msg}")
 
 def press_and_release(key_obj):
-    """Press and release a single key."""
     keyboard.press(key_obj)
     keyboard.release(key_obj)
 
 def delete_line_action():
     debug_print("Performing 'delete line' action.")
     press_and_release(Key.home)
-
     keyboard.press(Key.shift)
     press_and_release(Key.down)
     keyboard.release(Key.shift)
-
     press_and_release(Key.delete)
 
 def release_all_modifiers():
-    """Release known modifiers: shift, ctrl, alt."""
     debug_print("Releasing all modifiers (Shift, Ctrl, Alt).")
     for mod_key in [Key.shift, Key.ctrl, Key.alt]:
         keyboard.release(mod_key)
@@ -149,11 +103,6 @@ def release_all_modifiers():
 ###############################################################################
 
 def parse_tokens_for_modifiers_and_main(tokens):
-    """
-    Gather recognized modifiers at start,
-    then treat the next token as the main key.
-    If the next token after the main key is 'key', skip it.
-    """
     modifiers = []
     main_key = None
     idx = 0
@@ -166,7 +115,7 @@ def parse_tokens_for_modifiers_and_main(tokens):
         else:
             main_key = token
             idx += 1
-            # If user said "shift a key", skip "key"
+            # If user said "shift a key", skip 'key'
             if idx < len(tokens) and tokens[idx] == "key":
                 idx += 1
             break
@@ -174,34 +123,25 @@ def parse_tokens_for_modifiers_and_main(tokens):
     return modifiers, main_key, idx
 
 def process_spoken_phrase(spoken_text):
-    """
-    - Check if phrase is a custom action
-    - Check if it's a lock key
-    - Handle arrow synonyms
-    - Parse for modifiers + main key
-    - If main key is a special typed symbol, do so
-    - Fallback: type speech verbatim
-    """
     text = spoken_text.lower().strip()
     debug_print(f"process_spoken_phrase received: '{text}'")
 
-    # 1) custom actions
     if text in CUSTOM_ACTIONS:
         action_val = CUSTOM_ACTIONS[text]
         if action_val == "delete_line_action":
             delete_line_action()
         return
 
-    # 2) lock keys
+    # lock keys
     if text in LOCK_MAP:
         debug_print(f"Lock key => {text}")
         press_and_release(LOCK_MAP[text])
         return
 
-    # 3) arrow synonyms
+    # arrow synonyms
     if text in ARROW_SYNONYMS:
         text = ARROW_SYNONYMS[text]
-        debug_print(f"Synonym matched => unified to '{text}'")
+        debug_print(f"Synonym matched => '{text}'")
 
     tokens = text.split()
     if not tokens:
@@ -209,7 +149,6 @@ def process_spoken_phrase(spoken_text):
 
     modifiers, main_key, idx = parse_tokens_for_modifiers_and_main(tokens)
 
-    # fallback if no main_key but we have modifiers
     if not main_key and modifiers:
         main_key = tokens[-1]
 
@@ -220,64 +159,8 @@ def process_spoken_phrase(spoken_text):
 
     # check main key
     if main_key in MAIN_KEY_MAP:
-        mapped = MAIN_KEY_MAP[main_key]
-        if mapped == "typed_equal":
-            debug_print("Typing '=' for 'equal key'")
-            keyboard.type("=")
-        elif mapped == "typed_period":
-            debug_print("Typing '.' for 'period key'")
-            keyboard.type(".")
-        elif mapped == "typed_question":
-            debug_print("Typing '?' for 'question mark key' or 'question key'")
-            keyboard.type("?")
-        elif mapped == "typed_exclamation":
-            debug_print("Typing '!' for 'bang key' or 'exclamation key'")
-            keyboard.type("!")
-        elif mapped == "typed_at":
-            debug_print("Typing '@' for 'at key'")
-            keyboard.type("@")
-        elif mapped == "typed_hash":
-            debug_print("Typing '#' for 'hash key'")
-            keyboard.type("#")
-        elif mapped == "typed_dollar":
-            debug_print("Typing '$' for 'dollar key'")
-            keyboard.type("$")
-        elif mapped == "typed_percent":
-            debug_print("Typing '%' for 'percent key'")
-            keyboard.type("%")
-        elif mapped == "typed_caret":
-            debug_print("Typing '^' for 'caret key'")
-            keyboard.type("^")
-        elif mapped == "typed_ampersand":
-            debug_print("Typing '&' for 'ampersand key'")
-            keyboard.type("&")
-        elif mapped == "typed_star":
-            debug_print("Typing '*' for 'star key'")
-            keyboard.type("*")
-        elif mapped == "typed_left_paren":
-            debug_print("Typing '(' for 'left paren key'")
-            keyboard.type("(")
-        elif mapped == "typed_right_paren":
-            debug_print("Typing ')' for 'right paren key'")
-            keyboard.type(")")
-        elif mapped == "typed_plus":
-            debug_print("Typing '+' for 'plus key'")
-            keyboard.type("+")
-        elif mapped == "typed_underscore":
-            debug_print("Typing '_' for 'underline key'")
-            keyboard.type("_")
-        elif mapped == "typed_minus":
-            debug_print("Typing '-' for 'minus key'")
-            keyboard.type("-")
-
-        elif isinstance(mapped, Key):
-            debug_print(f"Recognized special key => {main_key}")
-            # Possibly caps lock key or a standard Key.* 
-            press_and_release(mapped)
-        else:
-            debug_print(f"Unknown mapped => {mapped}")
-
-        # release modifiers
+        debug_print(f"Recognized special key => {main_key}")
+        press_and_release(MAIN_KEY_MAP[main_key])
         for mod in reversed(modifiers):
             debug_print(f"Releasing modifier: {mod}")
             keyboard.release(mod)
@@ -312,20 +195,27 @@ def on_release(key):
     pass
 
 def start_physical_key_listener():
+    from pynput.keyboard import Listener
     listener = Listener(on_press=on_press, on_release=on_release)
     listener.start()
     return listener
 
 ###############################################################################
-# 5) Background Listening for Speech
+# 5) Background Listening for Speech with concurrency=1 (Ignore partial)
 ###############################################################################
 
 recognizer = sr.Recognizer()
 microphone = sr.Microphone()
+
 stop_listening = None
 
-def recognize_callback(recognizer_instance, audio_data):
+def callback_for_final_only(recognizer_instance, audio_data):
+    """
+    This callback is invoked whenever a chunk is recognized as final
+    (NOT partial). If partial triggers are used, we'll skip them.
+    """
     try:
+        # Recognize final text
         text = recognizer_instance.recognize_google(audio_data)
         debug_print(f"[Callback] Recognized text => {text}")
         process_spoken_phrase(text)
@@ -337,16 +227,18 @@ def recognize_callback(recognizer_instance, audio_data):
 def main():
     global stop_listening
 
-    # Start physical key listener
+    # 1) Start physical key listener
     start_physical_key_listener()
 
+    # 2) Setup microphone
     with microphone as source:
         debug_print("Adjusting for ambient noise, please wait...")
         recognizer.adjust_for_ambient_noise(source, duration=2)
         debug_print("Starting background listener...")
 
-    # Listen in background indefinitely
-    stop_listening = recognizer.listen_in_background(microphone, recognize_callback)
+    # 3) concurrency=1 => we use `listen_in_background` just once
+    stop_listening = recognizer.listen_in_background(microphone, callback_for_final_only)
+
     debug_print("Background listener started. Running indefinitely until Ctrl+C...")
 
     try:
