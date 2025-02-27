@@ -1,4 +1,4 @@
-# My first git-synchronized project; now called transcribe_microphone
+# My first git-synchronized project; now called transcribe_mic
 
 ChatGPT coded script I intend to build up to a voice-to-text (VTT) keyboard near-substitute. ChatGPT chose python as the best language to use, but why not demand a c++ version in the future? We'll see...
 
